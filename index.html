@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Uber Mejorada</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #22c55e;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+            --border-radius: 12px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --light: #1e293b;
+            --dark: #f8fafc;
+            --gray: #94a3b8;
+            --light-gray: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: var(--transition);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 1200px;
+            overflow: hidden;
+            height: 95vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark-mode .container {
+            background: #0f172a;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dark-mode header {
+            background: var(--primary-dark);
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .app-content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 25px;
+            overflow: auto;
+            flex: 1;
+        }
+
+        .panel {
+            background: var(--light);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+            overflow: auto;
+        }
+
+        .dark-mode .panel {
+            background: #1e293b;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dark-mode h2 {
+            color: var(--secondary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dark-mode label {
+            color: var(--light-gray);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .dark-mode input {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            border-left: 4px solid var(--primary);
+        }
+
+        .dark-mode .stat-card {
+            background: #334155;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 8px 0;
+        }
+
+        .dark-mode .stat-value {
+            color: var(--secondary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            transition: width 0.5s ease-in-out;
+            position: relative;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 700;
+            font-size: 11px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .suggestion-box {
+            background: #dbeafe;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: var(--border-radius);
+        }
+
+        .dark-mode .suggestion-box {
+            background: #1e3a8a;
+        }
+
+        .suggestion-title {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dark-mode .suggestion-title {
+            color: #93c5fd;
+        }
+
+        .next-trip {
+            background: #fffbeb;
+            border: 2px dashed var(--warning);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .dark-mode .next-trip {
+            background: #78350f;
+            border-color: #f59e0b;
+        }
+
+        .next-trip-title {
+            color: var(--warning);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .next-trip-amount {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--warning);
+            margin: 8px 0;
+        }
+
+        .trip-list {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .trip-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: white;
+            border-radius: var(--border-radius);
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary);
+        }
+
+        .dark-mode .trip-item {
+            background: #334155;
+        }
+
+        .trip-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .trip-number {
+            font-weight: 700;
+            color: var(--gray);
+        }
+
+        .trip-time {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .trip-amount {
+            font-weight: 700;
+            color: var(--success);
+            font-size: 16px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .time-display {
+            background: var(--light);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            margin: 15px 0;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark-mode .time-display {
+            background: #334155;
+        }
+
+        .efficiency-meter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .efficiency-label {
+            font-weight: 600;
+            color: var(--gray);
+            min-width: 100px;
+        }
+
+        .efficiency-bar {
+            flex-grow: 1;
+            height: 10px;
+            background: var(--light-gray);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .efficiency-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: var(--gray);
+            font-size: 13px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .dark-mode footer {
+            color: var(--light-gray);
+        }
+
+        /* Nuevos estilos para la sección de días guardados */
+        .saved-days-panel {
+            grid-column: 1 / -1;
+            margin-top: 15px;
+        }
+
+        .saved-days-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .saved-day-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--secondary);
+            position: relative;
+        }
+
+        .dark-mode .saved-day-card {
+            background: #334155;
+        }
+
+        .saved-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .saved-day-date {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .saved-day-amount {
+            font-weight: 700;
+            color: var(--success);
+            font-size: 16px;
+        }
+
+        .saved-day-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .saved-day-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .saved-day-stat-value {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .saved-day-stat-label {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .total-summary {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            text-align: center;
+        }
+
+        .dark-mode .total-summary {
+            background: #334155;
+        }
+
+        .total-summary-item {
+            padding: 12px;
+        }
+
+        .total-summary-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--success);
+            margin: 5px 0;
+        }
+
+        .total-summary-label {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .btn-delete-day {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: var(--danger);
+            font-size: 12px;
+        }
+
+        .btn-delete-day:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .reset-days-btn {
+            margin-top: 15px;
+        }
+
+        /* Gráficos */
+        .chart-container {
+            margin: 20px 0;
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        /* Nuevos estilos para la funcionalidad de viajes equivalentes */
+        .equivalent-info {
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .equivalent-notification {
+            background: #fffbeb;
+            border: 1px solid var(--warning);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .equivalent-notification.visible {
+            display: block;
+        }
+
+        .equivalent-badge {
+            font-size: 10px;
+            background: var(--warning);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
+        /* Nuevos estilos para el sistema de saldos */
+        .saldo-display {
+            background: #f0f9ff;
+            border: 1px solid var(--primary);
+            border-radius: var(--border-radius);
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .dark-mode .saldo-display {
+            background: #1e3a8a;
+            border-color: var(--secondary);
+        }
+
+        .saldo-label {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .dark-mode .saldo-label {
+            color: #93c5fd;
+        }
+
+        .saldo-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .dark-mode .saldo-value {
+            color: var(--secondary);
+        }
+
+        .trip-with-saldo {
+            border-left: 4px solid var(--warning);
+        }
+
+        .trip-with-saldo .trip-amount {
+            color: var(--warning);
+        }
+
+        .saldo-badge {
+            font-size: 10px;
+            background: var(--warning);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
+        /* Mejoras de rendimiento para móviles */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none;
+            }
+        }
+
+        /* Optimizaciones para móviles */
+        input, button, select, textarea {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        button {
+            min-height: 44px;
+        }
+
+        input {
+            font-size: 16px; /* Evita zoom en iOS */
+        }
+
+        /* Responsividad mejorada */
+        @media (max-width: 1024px) {
+            .container {
+                height: auto;
+                min-height: 95vh;
+            }
+            
+            .app-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .panel {
+                max-height: none;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            h2 {
+                font-size: 19px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                height: auto;
+                min-height: 95vh;
+            }
+            
+            header {
+                padding: 12px 15px;
+            }
+            
+            .desktop-header {
+                display: none;
+            }
+            
+            .mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+            }
+            
+            .menu-toggle {
+                display: flex;
+            }
+            
+            .app-content {
+                padding: 15px;
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .panel {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            h2 {
+                font-size: 18px;
+            }
+            
+            .config-panel {
+                display: none;
+            }
+            
+            .config-panel.active {
+                display: block;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .saved-days-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .total-summary {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .chart-container {
+                height: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 18px;
+            }
+            
+            h2 {
+                font-size: 16px;
+            }
+            
+            .stat-value {
+                font-size: 18px;
+            }
+            
+            .next-trip-amount {
+                font-size: 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .total-summary {
+                grid-template-columns: 1fr;
+            }
+            
+            .trip-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .saved-day-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .chart-container {
+                height: 180px;
+            }
+            
+            /* Mejoras específicas para móviles pequeños */
+            .panel {
+                padding: 12px;
+            }
+            
+            button {
+                padding: 10px 14px;
+                font-size: 15px;
+            }
+            
+            input {
+                padding: 10px 12px;
+            }
+            
+            .progress-bar {
+                height: 16px;
+            }
+            
+            .progress-text {
+                font-size: 10px;
+            }
+        }
+
+        /* Scrollbar styling optimizado para móviles */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--light-gray);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        .auto-calculation {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .auto-calculation-label {
+            font-weight: 600;
+            color: var(--gray);
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .auto-calculation-value {
+            font-weight: 700;
+            color: var(--primary);
+            padding: 6px 10px;
+            background: var(--light-gray);
+            border-radius: 6px;
+            flex-grow: 1;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .dark-mode .auto-calculation-value {
+            background: #475569;
+        }
+
+        .tab-container {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+        
+        .multiplier-badge {
+            font-size: 12px;
+            background: var(--warning);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="desktop-header">
+                <h1><i class="fas fa-taxi"></i> Calculadora Uber Mejorada</h1>
+                <p>Planifica tu jornada y maximiza tus ganancias</p>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            <div class="mobile-header">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1><i class="fas fa-taxi"></i> Uber Calculator</h1>
+                <button class="theme-toggle" id="themeToggleMobile">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+        
+        <div class="app-content">
+            <div class="panel config-panel" id="configPanel">
+                <h2><i class="fas fa-cog"></i> Configuración</h2>
+                
+                <div class="form-group">
+                    <label for="metaDiaria"><i class="fas fa-bullseye"></i> Meta Diaria ($):</label>
+                    <input type="number" id="metaDiaria" value="1000" min="0" step="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="horasTrabajo"><i class="fas fa-clock"></i> Horas a Trabajar:</label>
+                    <input type="number" id="horasTrabajo" value="10" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="tiempoPromedio"><i class="fas fa-stopwatch"></i> Tiempo Promedio por Viaje (min):</label>
+                    <input type="number" id="tiempoPromedio" value="25" min="5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="costoPromedio"><i class="fas fa-money-bill-wave"></i> Costo Promedio por Viaje ($):</label>
+                    <input type="number" id="costoPromedio" value="40" min="0" step="5">
+                </div>
+
+                <div class="auto-calculation">
+                    <span class="auto-calculation-label">Tiempo promedio calculado:</span>
+                    <span class="auto-calculation-value" id="tiempoCalculado">0 min</span>
+                </div>
+
+                <!-- Display de saldo acumulado -->
+                <div class="saldo-display">
+                    <div class="saldo-label"><i class="fas fa-wallet"></i> Saldo Acumulado</div>
+                    <div class="saldo-value" id="saldoAcumulado">$0.00</div>
+                </div>
+                
+                <button id="btnCalcular">
+                    <i class="fas fa-calculator"></i> Calcular Objetivos
+                </button>
+                
+                <div class="time-display">
+                    <div id="currentTime">Cargando hora actual...</div>
+                    <div id="workingHours">Jornada: 0h 0m</div>
+                </div>
+                
+                <div class="suggestion-box">
+                    <div class="suggestion-title"><i class="fas fa-lightbulb"></i> Recomendación:</div>
+                    <div class="suggestion-text" id="generalSuggestion">Establece metas realistas según tu experiencia y zona de trabajo. Considera tráfico y tiempos de espera.</div>
+                </div>
+                
+                <h2><i class="fas fa-chart-line"></i> Estadísticas</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Viajes Realizados</div>
+                        <div class="stat-value" id="viajesRealizados">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Viajes Restantes</div>
+                        <div class="stat-value" id="viajesRestantes">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Ganancia Promedio</div>
+                        <div class="stat-value" id="gananciaPromedio">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Eficiencia</div>
+                        <div class="stat-value" id="eficiencia">0%</div>
+                    </div>
+                </div>
+                
+                <div class="efficiency-meter">
+                    <span class="efficiency-label">Rendimiento:</span>
+                    <div class="efficiency-bar">
+                        <div class="efficiency-fill" id="efficiencyFill" style="width: 0%; background: #ef4444;"></div>
+                    </div>
+                </div>
+
+                <button class="btn-success" id="btnGuardarDia">
+                    <i class="fas fa-save"></i> Guardar Día
+                </button>
+            </div>
+            
+            <div class="panel">
+                <h2><i class="fas fa-road"></i> Planificación de Viajes</h2>
+                
+                <div class="result-item">
+                    <span class="result-label">Viajes Necesarios:</span>
+                    <span class="result-value" id="viajesNecesarios">0</span>
+                </div>
+                
+                <div class="result-item">
+                    <span class="result-label">Velocidad Requerida:</span>
+                    <span class="result-value" id="velocidadRequerida">$0.00/h</span>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <span>Progreso Diario</span>
+                        <span id="progressPercentage">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progreso" style="width: 0%">
+                            <span class="progress-text" id="progressText">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                
+                <div class="next-trip">
+                    <div class="next-trip-title"><i class="fas fa-arrow-right"></i> Próximo Viaje Sugerido</div>
+                    <div class="next-trip-amount" id="sugerenciaMonto">$0.00 - $0.00</div>
+                    <div style="margin-top: 8px; font-size: 14px; color: var(--gray);">
+                        <span id="viajesFaltantes">0</span> viajes restantes hoy
+                    </div>
+                    <div class="equivalent-info" id="infoEquivalente">
+                        Cada viaje de $40.00 cuenta como 1 viaje. Montos mayores cuentan como múltiples viajes.
+                    </div>
+                </div>
+                
+                <!-- Notificación de viajes equivalentes -->
+                <div class="equivalent-notification" id="equivalentNotification">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="equivalentMessage"></span>
+                </div>
+
+                <!-- Notificación de saldo utilizado -->
+                <div class="equivalent-notification" id="saldoNotification" style="display: none; background: #fffbeb; border-color: var(--warning);">
+                    <i class="fas fa-coins"></i>
+                    <span id="saldoMessage"></span>
+                </div>
+                
+                <h2><i class="fas fa-plus-circle"></i> Registrar Viaje</h2>
+                
+                <div class="form-group">
+                    <label for="montoViaje"><i class="fas fa-money-bill"></i> Monto del Viaje ($):</label>
+                    <input type="number" id="montoViaje" placeholder="Ingresa el monto del viaje" step="0.01">
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="btnRegistrar">
+                        <i class="fas fa-check"></i> Registrar Viaje
+                    </button>
+                    <button class="btn-secondary" id="btnSimular">
+                        <i class="fas fa-random"></i> Simular Viaje
+                    </button>
+                </div>
+                
+                <button class="btn-danger" id="btnReiniciar">
+                    <i class="fas fa-trash"></i> Reiniciar Día
+                </button>
+                
+                <h2><i class="fas fa-history"></i> Historial de Viajes</h2>
+                
+                <div class="trip-list" id="listaViajes">
+                    <div style="text-align: center; color: var(--gray); padding: 20px;">
+                        <i class="fas fa-taxi" style="font-size: 40px; margin-bottom: 10px;"></i>
+                        <p>No hay viajes registrados aún</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel saved-days-panel">
+                <div class="tab-container">
+                    <div class="tab active" data-tab="stats">Estadísticas</div>
+                    <div class="tab" data-tab="history">Historial</div>
+                    <div class="tab" data-tab="charts">Gráficos</div>
+                </div>
+                
+                <div class="tab-content active" id="statsTab">
+                    <h2><i class="fas fa-database"></i> Días Guardados y Estadísticas</h2>
+                    
+                    <div class="total-summary">
+                        <div class="total-summary-item">
+                            <div class="total-summary-label">Total Ganado</div>
+                            <div class="total-summary-value" id="totalGanado">$0.00</div>
+                        </div>
+                        <div class="total-summary-item">
+                            <div class="total-summary-label">Días Trabajados</div>
+                            <div class="total-summary-value" id="diasTrabajados">0</div>
+                        </div>
+                        <div class="total-summary-item">
+                            <div class="total-summary-label">Promedio Diario</div>
+                            <div class="total-summary-value" id="promedioDiario">$0.00</div>
+                        </div>
+                        <div class="total-summary-item">
+                            <div class="total-summary-label">Mejor Día</div>
+                            <div class="total-summary-value" id="mejorDia">$0.00</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-danger reset-days-btn" id="btnResetDias">
+                        <i class="fas fa-trash"></i> Resetear Días Guardados
+                    </button>
+                </div>
+                
+                <div class="tab-content" id="historyTab">
+                    <h2><i class="fas fa-calendar-days"></i> Historial de Días</h2>
+                    
+                    <div class="saved-days-list" id="listaDias">
+                        <div style="text-align: center; color: var(--gray); padding: 20px; grid-column: 1 / -1;">
+                            <i class="fas fa-calendar-plus" style="font-size: 40px; margin-bottom: 10px;"></i>
+                            <p>No hay días guardados aún</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="chartsTab">
+                    <h2><i class="fas fa-chart-bar"></i> Gráficos de Rendimiento</h2>
+                    
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="efficiencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Calculadora Uber Mejorada &copy; 2023 - Diseñado para maximizar tus ganancias</p>
+        </footer>
+    </div>
+
+    <script>
+        // Variables globales
+        let metaDiaria = 1000;
+        let horasTrabajo = 10;
+        let tiempoPromedio = 25;
+        let costoPromedio = 40;
+        let viajes = [];
+        let totalAcumulado = 0;
+        let saldoAcumulado = 0;
+        let startTime = new Date();
+        let isDarkMode = false;
+        let savedDays = [];
+        let progressChart, weeklyChart, efficiencyChart;
+        
+        // Elementos del DOM
+        const themeToggle = document.getElementById('themeToggle');
+        const themeToggleMobile = document.getElementById('themeToggleMobile');
+        const menuToggle = document.getElementById('menuToggle');
+        const configPanel = document.getElementById('configPanel');
+        const metaDiariaInput = document.getElementById('metaDiaria');
+        const horasTrabajoInput = document.getElementById('horasTrabajo');
+        const tiempoPromedioInput = document.getElementById('tiempoPromedio');
+        const costoPromedioInput = document.getElementById('costoPromedio');
+        const montoViajeInput = document.getElementById('montoViaje');
+        const viajesNecesariosElement = document.getElementById('viajesNecesarios');
+        const velocidadRequeridaElement = document.getElementById('velocidadRequerida');
+        const progresoElement = document.getElementById('progreso');
+        const progressTextElement = document.getElementById('progressText');
+        const progressPercentageElement = document.getElementById('progressPercentage');
+        const sugerenciaMontoElement = document.getElementById('sugerenciaMonto');
+        const viajesFaltantesElement = document.getElementById('viajesFaltantes');
+        const listaViajesElement = document.getElementById('listaViajes');
+        const currentTimeElement = document.getElementById('currentTime');
+        const workingHoursElement = document.getElementById('workingHours');
+        const viajesRealizadosElement = document.getElementById('viajesRealizados');
+        const viajesRestantesElement = document.getElementById('viajesRestantes');
+        const gananciaPromedioElement = document.getElementById('gananciaPromedio');
+        const eficienciaElement = document.getElementById('eficiencia');
+        const efficiencyFillElement = document.getElementById('efficiencyFill');
+        const generalSuggestionElement = document.getElementById('generalSuggestion');
+        const tiempoCalculadoElement = document.getElementById('tiempoCalculado');
+        const btnGuardarDia = document.getElementById('btnGuardarDia');
+        const listaDiasElement = document.getElementById('listaDias');
+        const totalGanadoElement = document.getElementById('totalGanado');
+        const diasTrabajadosElement = document.getElementById('diasTrabajados');
+        const promedioDiarioElement = document.getElementById('promedioDiario');
+        const mejorDiaElement = document.getElementById('mejorDia');
+        const btnResetDias = document.getElementById('btnResetDias');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const infoEquivalente = document.getElementById('infoEquivalente');
+        const equivalentNotification = document.getElementById('equivalentNotification');
+        const equivalentMessage = document.getElementById('equivalentMessage');
+        const saldoAcumuladoElement = document.getElementById('saldoAcumulado');
+        const saldoNotification = document.getElementById('saldoNotification');
+        const saldoMessage = document.getElementById('saldoMessage');
+        
+        // Inicializar la calculadora
+        function inicializar() {
+            calcularObjetivos();
+            updateClock();
+            setInterval(updateClock, 1000);
+            initCharts();
+            
+            // Event listeners
+            document.getElementById('btnCalcular').addEventListener('click', calcularObjetivos);
+            document.getElementById('btnRegistrar').addEventListener('click', registrarViaje);
+            document.getElementById('btnSimular').addEventListener('click', simularViaje);
+            document.getElementById('btnReiniciar').addEventListener('click', reiniciarDia);
+            btnGuardarDia.addEventListener('click', guardarDia);
+            btnResetDias.addEventListener('click', resetearDiasGuardados);
+            themeToggle.addEventListener('click', toggleTheme);
+            themeToggleMobile.addEventListener('click', toggleTheme);
+            menuToggle.addEventListener('click', toggleMenu);
+            
+            // Event listeners para calcular automáticamente
+            metaDiariaInput.addEventListener('input', calcularTiempoPromedioAuto);
+            horasTrabajoInput.addEventListener('input', calcularTiempoPromedioAuto);
+            costoPromedioInput.addEventListener('input', calcularTiempoPromedioAuto);
+            
+            // Event listeners para pestañas
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    changeTab(tabId);
+                });
+            });
+            
+            // Cargar valores guardados si existen
+            cargarValoresGuardados();
+        }
+        
+        // Inicializar gráficos
+        function initCharts() {
+            const progressCtx = document.getElementById('progressChart').getContext('2d');
+            progressChart = new Chart(progressCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completado', 'Restante'],
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: ['#22c55e', '#e2e8f0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true
+                        }
+                    }
+                }
+            });
+            
+            const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+            weeklyChart = new Chart(weeklyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Ganancias por día ($)',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#2563eb',
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            const efficiencyCtx = document.getElementById('efficiencyChart').getContext('2d');
+            efficiencyChart = new Chart(efficiencyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Eficiencia (%)',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#10b981',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Actualizar gráficos
+        function updateCharts() {
+            // Actualizar gráfico de progreso
+            const porcentaje = Math.min(100, (totalAcumulado / metaDiaria) * 100);
+            progressChart.data.datasets[0].data = [porcentaje, 100 - porcentaje];
+            progressChart.update();
+            
+            // Actualizar gráficos semanales si hay datos
+            if (savedDays.length > 0) {
+                const last7Days = savedDays.slice(-7);
+                const earningsData = last7Days.map(day => day.total);
+                const efficiencyData = last7Days.map(day => {
+                    const gananciaPromedio = day.viajesRealizados > 0 ? (day.total / day.viajesRealizados) : 0;
+                    return day.costoPromedio > 0 ? (gananciaPromedio / day.costoPromedio) * 100 : 0;
+                });
+                
+                // Ajustar etiquetas
+                const labels = last7Days.map(day => {
+                    const date = new Date(day.timestamp);
+                    return date.toLocaleDateString('es-ES', { weekday: 'short' });
+                });
+                
+                weeklyChart.data.labels = labels;
+                weeklyChart.data.datasets[0].data = earningsData;
+                weeklyChart.update();
+                
+                efficiencyChart.data.labels = labels;
+                efficiencyChart.data.datasets[0].data = efficiencyData;
+                efficiencyChart.update();
+            }
+        }
+        
+        // Cambiar pestaña
+        function changeTab(tabId) {
+            tabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            tabContents.forEach(content => {
+                if (content.id === tabId + 'Tab') {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        }
+        
+        // Alternar menú en móviles
+        function toggleMenu() {
+            configPanel.classList.toggle('active');
+        }
+        
+        // Alternar modo oscuro/claro
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            const icon = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            themeToggle.innerHTML = icon;
+            themeToggleMobile.innerHTML = icon;
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+        
+        // Actualizar reloj
+        function updateClock() {
+            const now = new Date();
+            currentTimeElement.textContent = now.toLocaleTimeString();
+            
+            // Calcular tiempo transcurrido
+            const elapsedMs = now - startTime;
+            const elapsedHours = Math.floor(elapsedMs / 3600000);
+            const elapsedMinutes = Math.floor((elapsedMs % 3600000) / 60000);
+            
+            workingHoursElement.textContent = `Jornada: ${elapsedHours}h ${elapsedMinutes}m`;
+        }
+        
+        // Calcular el tiempo promedio automáticamente
+        function calcularTiempoPromedioAuto() {
+            const meta = parseFloat(metaDiariaInput.value) || 1000;
+            const horas = parseInt(horasTrabajoInput.value) || 10;
+            const costo = parseFloat(costoPromedioInput.value) || 40;
+            
+            if (meta > 0 && horas > 0 && costo > 0) {
+                const viajesNecesarios = Math.ceil(meta / costo);
+                const tiempoTotalMinutos = horas * 60;
+                const tiempoPromedioCalculado = tiempoTotalMinutos / viajesNecesarios;
+                
+                tiempoCalculadoElement.textContent = `${tiempoPromedioCalculado.toFixed(1)} min`;
+                
+                // Actualizar el campo de tiempo promedio
+                tiempoPromedioInput.value = tiempoPromedioCalculado.toFixed(1);
+            }
+        }
+        
+        // Calcular objetivos basados en la configuración
+        function calcularObjetivos() {
+            metaDiaria = parseFloat(metaDiariaInput.value) || 1000;
+            horasTrabajo = parseInt(horasTrabajoInput.value) || 10;
+            tiempoPromedio = parseInt(tiempoPromedioInput.value) || 25;
+            costoPromedio = parseFloat(costoPromedioInput.value) || 40;
+            
+            // Calcular viajes necesarios
+            const viajesNecesarios = Math.ceil(metaDiaria / costoPromedio);
+            
+            // Calcular velocidad requerida
+            const velocidadRequerida = metaDiaria / horasTrabajo;
+            
+            // Actualizar la UI
+            viajesNecesariosElement.textContent = viajesNecesarios;
+            velocidadRequeridaElement.textContent = `$${velocidadRequerida.toFixed(2)}/h`;
+            
+            // Actualizar información de equivalencia
+            infoEquivalente.textContent = `Cada viaje de $${costoPromedio.toFixed(2)} cuenta como 1 viaje. Montos mayores cuentan como múltiples viajes.`;
+            
+            // Actualizar sugerencia para el próximo viaje
+            actualizarSugerencia();
+            actualizarEstadisticas();
+            
+            // Guardar valores
+            guardarValores();
+        }
+        
+        // Registrar un nuevo viaje
+        function registrarViaje() {
+            const monto = parseFloat(montoViajeInput.value);
+            
+            if (!monto || monto <= 0) {
+                alert('Por favor ingresa un monto válido para el viaje.');
+                return;
+            }
+            
+            // Calcular cuántos viajes equivalentes representa este monto
+            let viajesEquivalentes = Math.floor(monto / costoPromedio);
+            let resto = monto % costoPromedio;
+            
+            // Si el monto es mayor al costo promedio, generar saldo
+            if (resto > 0) {
+                saldoAcumulado += resto;
+                saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
+                
+                // Mostrar notificación de saldo generado
+                saldoMessage.textContent = `¡Has generado $${resto.toFixed(2)} de saldo! Saldo total: $${saldoAcumulado.toFixed(2)}`;
+                saldoNotification.style.display = 'block';
+                
+                // Ocultar la notificación después de 5 segundos
+                setTimeout(() => {
+                    saldoNotification.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Si no hay viajes equivalentes pero el monto es positivo, contar como 1 viaje
+            if (viajesEquivalentes === 0 && monto > 0) {
+                viajesEquivalentes = 1;
+            }
+            
+            // Agregar el viaje con la información del multiplicador
+            const ahora = new Date();
+            viajes.push({
+                monto: monto,
+                hora: ahora.toLocaleTimeString(),
+                timestamp: ahora.getTime(),
+                multiplicador: viajesEquivalentes,
+                tipo: 'normal'
+            });
+            
+            totalAcumulado += monto;
+            
+            // Mostrar notificación si se registró un viaje con multiplicador
+            if (viajesEquivalentes > 1) {
+                equivalentMessage.textContent = `¡Viaje registrado con multiplicador x${viajesEquivalentes}!`;
+                equivalentNotification.classList.add('visible');
+                
+                // Ocultar la notificación después de 5 segundos
+                setTimeout(() => {
+                    equivalentNotification.classList.remove('visible');
+                }, 5000);
+            }
+            
+            // Actualizar la UI
+            actualizarProgreso();
+            actualizarSugerencia();
+            actualizarListaViajes();
+            actualizarEstadisticas();
+            updateCharts();
+            
+            // Limpiar el campo
+            montoViajeInput.value = '';
+            
+            // Verificar y aplicar saldo automáticamente si es suficiente
+            verificarYUsarSaldoAutomaticamente();
+            
+            // Guardar valores
+            guardarValores();
+        }
+        
+        // Verificar y usar saldo automáticamente
+        function verificarYUsarSaldoAutomaticamente() {
+            // Verificar si hay suficiente saldo para al menos un viaje
+            while (saldoAcumulado >= costoPromedio) {
+                // Usar el saldo para un viaje
+                saldoAcumulado -= costoPromedio;
+                saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
+                
+                // Registrar un viaje con saldo
+                const ahora = new Date();
+                viajes.push({
+                    monto: 0,
+                    hora: ahora.toLocaleTimeString(),
+                    timestamp: ahora.getTime(),
+                    multiplicador: 1,
+                    tipo: 'saldo'
+                });
+                
+                // Mostrar notificación
+                saldoMessage.textContent = `¡Viaje realizado automáticamente con saldo! Saldo restante: $${saldoAcumulado.toFixed(2)}`;
+                saldoNotification.style.display = 'block';
+                
+                // Ocultar la notificación después de 5 segundos
+                setTimeout(() => {
+                    saldoNotification.style.display = 'none';
+                }, 5000);
+                
+                // Actualizar la UI
+                actualizarSugerencia();
+                actualizarListaViajes();
+                actualizarEstadisticas();
+                updateCharts();
+            }
+        }
+        
+        // Simular un viaje
+        function simularViaje() {
+            // Generar un monto aleatorio entre $5 y $100
+            const monto = (Math.random() * 95 + 5).toFixed(2);
+            montoViajeInput.value = monto;
+            registrarViaje();
+        }
+        
+        // Reiniciar el día
+        function reiniciarDia() {
+            if (confirm('¿Estás seguro de que quieres reiniciar el día? Se borrarán todos los viajes registrados y el saldo acumulado.')) {
+                viajes = [];
+                totalAcumulado = 0;
+                saldoAcumulado = 0;
+                startTime = new Date();
+                
+                // Ocultar notificaciones
+                equivalentNotification.classList.remove('visible');
+                saldoNotification.style.display = 'none';
+                
+                // Actualizar la UI
+                actualizarProgreso();
+                actualizarSugerencia();
+                actualizarListaViajes();
+                actualizarEstadisticas();
+                saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
+                updateCharts();
+                
+                // Guardar valores
+                guardarValores();
+            }
+        }
+        
+        // Guardar el día actual
+        function guardarDia() {
+            if (viajes.length === 0) {
+                alert('No hay viajes registrados para guardar.');
+                return;
+            }
+            
+            const ahora = new Date();
+            const fecha = ahora.toLocaleDateString();
+            const hora = ahora.toLocaleTimeString();
+            
+            // Calcular el total de viajes equivalentes
+            const totalViajesEquivalentes = viajes.reduce((total, viaje) => total + (viaje.multiplicador || 1), 0);
+            
+            const dia = {
+                fecha: fecha,
+                hora: hora,
+                timestamp: ahora.getTime(),
+                meta: metaDiaria,
+                horasTrabajo: horasTrabajo,
+                tiempoPromedio: tiempoPromedio,
+                costoPromedio: costoPromedio,
+                viajes: [...viajes],
+                total: totalAcumulado,
+                viajesRealizados: totalViajesEquivalentes,
+                saldoFinal: saldoAcumulado
+            };
+            
+            savedDays.push(dia);
+            
+            // Actualizar la lista de días
+            actualizarListaDias();
+            updateCharts();
+            
+            // Mostrar mensaje de confirmación
+            alert(`Día guardado correctamente el ${fecha} a las ${hora}. Total: $${totalAcumulado.toFixed(2)}`);
+            
+            // Guardar valores
+            guardarValores();
+        }
+        
+        // Resetear todos los días guardados
+        function resetearDiasGuardados() {
+            if (savedDays.length === 0) {
+                alert('No hay días guardados para resetear.');
+                return;
+            }
+            
+            if (confirm('¿Estás seguro de que quieres eliminar todos los días guardados? Esta acción no se puede deshacer.')) {
+                savedDays = [];
+                actualizarListaDias();
+                updateCharts();
+                guardarValores();
+                alert('Todos los días guardados han sido eliminados.');
+            }
+        }
+        
+        // Eliminar un día específico
+        function eliminarDia(timestamp) {
+            if (confirm('¿Estás seguro de que quieres eliminar este día guardado?')) {
+                savedDays = savedDays.filter(dia => dia.timestamp !== timestamp);
+                actualizarListaDias();
+                updateCharts();
+                guardarValores();
+            }
+        }
+        
+        // Actualizar la barra de progreso
+        function actualizarProgreso() {
+            const porcentaje = Math.min(100, (totalAcumulado / metaDiaria) * 100);
+            progresoElement.style.width = `${porcentaje}%`;
+            progressTextElement.textContent = `${porcentaje.toFixed(1)}%`;
+            progressPercentageElement.textContent = `${porcentaje.toFixed(1)}%`;
+            
+            // Cambiar color según el progreso
+            if (porcentaje >= 100) {
+                progresoElement.style.background = 'linear-gradient(90deg, var(--success), #16a34a)';
+            } else if (porcentaje >= 70) {
+                progresoElement.style.background = 'linear-gradient(90deg, var(--warning), #ea580c)';
+            } else {
+                progresoElement.style.background = 'linear-gradient(90deg, var(--primary), var(--secondary))';
+            }
+        }
+        
+        // Actualizar la sugerencia para el próximo viaje
+        function actualizarSugerencia() {
+            const faltante = Math.max(0, metaDiaria - totalAcumulado);
+            
+            // Calcular el total de viajes equivalentes realizados
+            const viajesRealizados = viajes.reduce((total, viaje) => total + (viaje.multiplicador || 1), 0);
+            
+            const viajesNecesarios = Math.ceil(metaDiaria / costoPromedio);
+            const viajesRestantes = Math.max(0, viajesNecesarios - viajesRealizados);
+            
+            if (viajesRestantes <= 0) {
+                sugerenciaMontoElement.textContent = '¡Meta alcanzada!';
+                viajesFaltantesElement.textContent = '0';
+                return;
+            }
+            
+            const montoMinimo = (faltante / viajesRestantes) * 0.8;
+            const montoIdeal = (faltante / viajesRestantes) * 1.2;
+            
+            // Si el monto mínimo es muy bajo, usar el costo promedio como base
+            const montoSugeridoMin = Math.max(costoPromedio * 0.7, montoMinimo);
+            const montoSugeridoMax = Math.max(costoPromedio * 1.3, montoIdeal);
+            
+            sugerenciaMontoElement.textContent = `$${montoSugeridoMin.toFixed(2)} - $${montoSugeridoMax.toFixed(2)}`;
+            viajesFaltantesElement.textContent = viajesRestantes;
+        }
+        
+        // Actualizar estadísticas
+        function actualizarEstadisticas() {
+            // Calcular el total de viajes equivalentes realizados
+            const viajesRealizados = viajes.reduce((total, viaje) => total + (viaje.multiplicador || 1), 0);
+            
+            const viajesNecesarios = Math.ceil(metaDiaria / costoPromedio);
+            const viajesRestantes = Math.max(0, viajesNecesarios - viajesRealizados);
+            
+            // Calcular ganancia promedio
+            const gananciaPromedio = viajesRealizados > 0 ? (totalAcumulado / viajesRealizados) : 0;
+            
+            // Calcular eficiencia (comparación con el costo promedio esperado)
+            const eficiencia = costoPromedio > 0 ? (gananciaPromedio / costoPromedio) * 100 : 0;
+            
+            // Actualizar UI
+            viajesRealizadosElement.textContent = viajesRealizados;
+            viajesRestantesElement.textContent = viajesRestantes;
+            gananciaPromedioElement.textContent = `$${gananciaPromedio.toFixed(2)}`;
+            eficienciaElement.textContent = `${eficiencia.toFixed(1)}%`;
+            
+            // Actualizar barra de eficiencia
+            efficiencyFillElement.style.width = `${Math.min(100, eficiencia)}%`;
+            
+            // Cambiar color según eficiencia
+            if (eficiencia >= 100) {
+                efficiencyFillElement.style.background = 'var(--success)';
+                generalSuggestionElement.textContent = '¡Excelente! Estás superando tus expectativas. Sigue así.';
+            } else if (eficiencia >= 80) {
+                efficiencyFillElement.style.background = 'var(--warning)';
+                generalSuggestionElement.textContent = 'Vas bien, pero podrías mejorar. Enfócate en viajes más largos o con mejores tarifas.';
+            } else {
+                efficiencyFillElement.style.background = 'var(--danger)';
+                generalSuggestionElement.textContent = 'Estás por debajo de tus expectativas. Considera cambiar de zona u horario.';
+            }
+        }
+        
+        // Actualizar la lista de viajes
+        function actualizarListaViajes() {
+            listaViajesElement.innerHTML = '';
+            
+            if (viajes.length === 0) {
+                listaViajesElement.innerHTML = `
+                    <div style="text-align: center; color: var(--gray); padding: 20px;">
+                        <i class="fas fa-taxi" style="font-size: 40px; margin-bottom: 10px;"></i>
+                        <p>No hay viajes registrados aún</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar viajes por timestamp (más recientes primero)
+            viajes.sort((a, b) => b.timestamp - a.timestamp);
+            
+            viajes.forEach((viaje, index) => {
+                const viajeElement = document.createElement('div');
+                viajeElement.className = viaje.tipo === 'saldo' ? 'trip-item trip-with-saldo' : 'trip-item';
+                
+                // Añadir indicador visual para viajes con multiplicador
+                const multiplicadorBadge = viaje.multiplicador > 1 ? 
+                    `<span class="multiplier-badge">x${viaje.multiplicador}</span>` : '';
+                
+                // Añadir indicador para viajes con saldo
+                const saldoBadge = viaje.tipo === 'saldo' ? 
+                    '<span class="saldo-badge">Con saldo</span>' : '';
+                
+                viajeElement.innerHTML = `
+                    <div class="trip-info">
+                        <span class="trip-number">Viaje #${viajes.length - index} ${multiplicadorBadge} ${saldoBadge}</span>
+                        <span class="trip-time">${viaje.hora}</span>
+                    </div>
+                    <span class="trip-amount">${viaje.tipo === 'saldo' ? 'Saldo aplicado' : '$' + viaje.monto.toFixed(2)}</span>
+                `;
+                listaViajesElement.appendChild(viajeElement);
+            });
+        }
+        
+        // Actualizar la lista de días guardados
+        function actualizarListaDias() {
+            listaDiasElement.innerHTML = '';
+            
+            if (savedDays.length === 0) {
+                listaDiasElement.innerHTML = `
+                    <div style="text-align: center; color: var(--gray); padding: 20px; grid-column: 1 / -1;">
+                        <i class="fas fa-calendar-plus" style="font-size: 40px; margin-bottom: 10px;"></i>
+                        <p>No hay días guardados aún</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar días por timestamp (más recientes primero)
+            savedDays.sort((a, b) => b.timestamp - a.timestamp);
+            
+            savedDays.forEach(dia => {
+                const diaElement = document.createElement('div');
+                diaElement.className = 'saved-day-card';
+                diaElement.innerHTML = `
+                    <button class="btn-danger btn-delete-day" onclick="eliminarDia(${dia.timestamp})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="saved-day-header">
+                        <span class="saved-day-date">${dia.fecha}</span>
+                        <span class="saved-day-amount">$${dia.total.toFixed(2)}</span>
+                    </div>
+                    <div class="saved-day-stats">
+                        <div class="saved-day-stat">
+                            <span class="saved-day-stat-value">${dia.viajesRealizados}</span>
+                            <span class="saved-day-stat-label">Viajes</span>
+                        </div>
+                        <div class="saved-day-stat">
+                            <span class="saved-day-stat-value">${dia.horasTrabajo}h</span>
+                            <span class="saved-day-stat-label">Trabajadas</span>
+                        </div>
+                        <div class="saved-day-stat">
+                            <span class="saved-day-stat-value">$${dia.costoPromedio.toFixed(2)}</span>
+                            <span class="saved-day-stat-label">Promedio/Viaje</span>
+                        </div>
+                        <div class="saved-day-stat">
+                            <span class="saved-day-stat-value">${Math.round((dia.total / dia.meta) * 100)}%</span>
+                            <span class="saved-day-stat-label">de Meta</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 12px; color: var(--gray);">
+                        Saldo final: $${dia.saldoFinal.toFixed(2)}
+                    </div>
+                `;
+                listaDiasElement.appendChild(diaElement);
+            });
+            
+            // Actualizar estadísticas totales
+            actualizarEstadisticasTotales();
+        }
+        
+        // Actualizar estadísticas totales
+        function actualizarEstadisticasTotales() {
+            if (savedDays.length === 0) {
+                totalGanadoElement.textContent = '$0.00';
+                diasTrabajadosElement.textContent = '0';
+                promedioDiarioElement.textContent = '$0.00';
+                mejorDiaElement.textContent = '$0.00';
+                return;
+            }
+            
+            const totalGanado = savedDays.reduce((sum, dia) => sum + dia.total, 0);
+            const diasTrabajados = savedDays.length;
+            const promedioDiario = totalGanado / diasTrabajados;
+            const mejorDia = Math.max(...savedDays.map(dia => dia.total));
+            
+            totalGanadoElement.textContent = `$${totalGanado.toFixed(2)}`;
+            diasTrabajadosElement.textContent = diasTrabajados;
+            promedioDiarioElement.textContent = `$${promedioDiario.toFixed(2)}`;
+            mejorDiaElement.textContent = `$${mejorDia.toFixed(2)}`;
+        }
+        
+        // Guardar valores en localStorage
+        function guardarValores() {
+            const datos = {
+                metaDiaria,
+                horasTrabajo,
+                tiempoPromedio,
+                costoPromedio,
+                viajes,
+                totalAcumulado,
+                saldoAcumulado,
+                startTime: startTime.getTime(),
+                savedDays
+            };
+            
+            localStorage.setItem('calculadoraUber', JSON.stringify(datos));
+        }
+        
+        // Cargar valores desde localStorage
+        function cargarValoresGuardados() {
+            // Cargar preferencia de tema
+            isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            const icon = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            themeToggle.innerHTML = icon;
+            themeToggleMobile.innerHTML = icon;
+            
+            // Cargar datos de la calculadora
+            const datosGuardados = localStorage.getItem('calculadoraUber');
+            
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+                
+                metaDiariaInput.value = datos.metaDiaria || 1000;
+                horasTrabajoInput.value = datos.horasTrabajo || 10;
+                tiempoPromedioInput.value = datos.tiempoPromedio || 25;
+                costoPromedioInput.value = datos.costoPromedio || 40;
+                viajes = datos.viajes || [];
+                totalAcumulado = datos.totalAcumulado || 0;
+                saldoAcumulado = datos.saldoAcumulado || 0;
+                savedDays = datos.savedDays || [];
+                
+                if (datos.startTime) {
+                    startTime = new Date(datos.startTime);
+                }
+                
+                calcularObjetivos();
+                actualizarProgreso();
+                actualizarListaViajes();
+                actualizarEstadisticas();
+                actualizarListaDias();
+                saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
+                updateCharts();
+                
+                // Calcular tiempo promedio automáticamente al cargar
+                calcularTiempoPromedioAuto();
+            }
+        }
+        
+        // Inicializar la aplicación cuando se cargue la página
+        window.addEventListener('DOMContentLoaded', inicializar);
+        
+        // Hacer la función eliminarDia global para que pueda ser llamada desde los botones
+        window.eliminarDia = eliminarDia;
+    </script>
+</body>
+</html>

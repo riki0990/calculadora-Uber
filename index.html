@@ -26,7 +26,6 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            transition: var(--transition);
         }
 
         body {
@@ -429,7 +428,6 @@
             cursor: default;
         }
 
-        /* Nuevos estilos para días transcurridos */
         .calendar-day.past-day {
             opacity: 0.6;
             background-color: #f3f4f6;
@@ -523,6 +521,99 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+            width: auto;
+            padding: 0;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        .resumen-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--light-gray);
+        }
+
+        .resumen-label {
+            font-weight: 600;
+            color: var(--gray);
+        }
+
+        .resumen-value {
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .resumen-destacado {
+            background-color: #f0f9ff;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .resumen-destacado .resumen-label {
+            color: var(--primary);
+        }
+
+        .auto-finish-notification {
+            background: #fef3c7;
+            border: 1px solid var(--warning);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
         }
 
         @media (max-width: 968px) {
@@ -693,6 +784,12 @@
                         <div class="stat-value" id="metaDisplay">$136.36</div>
                     </div>
                 </div>
+
+                <!-- Notificación de finalización automática -->
+                <div class="auto-finish-notification" id="autoFinishNotification">
+                    <i class="fas fa-robot"></i>
+                    <span id="autoFinishMessage"></span>
+                </div>
             </div>
             
             <div class="panel">
@@ -819,6 +916,24 @@
         </div>
     </div>
 
+    <!-- Modal para resumen del día -->
+    <div class="modal" id="modalResumenDia">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-chart-pie"></i> Resumen del Día
+                </div>
+                <button class="close-modal" id="closeResumenModal">&times;</button>
+            </div>
+            <div id="resumenDiaContent">
+                <!-- El contenido se genera dinámicamente -->
+            </div>
+            <button class="btn-success" id="btnConfirmarFinalizar" style="margin-top: 20px;">
+                <i class="fas fa-check-circle"></i> Confirmar Finalización
+            </button>
+        </div>
+    </div>
+
     <script>
         // Variables globales
         let metaDiaria = 136.36;
@@ -885,6 +1000,12 @@
         const nuevaMetaDiariaExcesoElement = document.getElementById('nuevaMetaDiariaExceso');
         const btnAplicarRedistribucionExceso = document.getElementById('btnAplicarRedistribucionExceso');
         const btnFinalizarDia = document.getElementById('btnFinalizarDia');
+        const modalResumenDia = document.getElementById('modalResumenDia');
+        const closeResumenModal = document.getElementById('closeResumenModal');
+        const resumenDiaContent = document.getElementById('resumenDiaContent');
+        const btnConfirmarFinalizar = document.getElementById('btnConfirmarFinalizar');
+        const autoFinishNotification = document.getElementById('autoFinishNotification');
+        const autoFinishMessage = document.getElementById('autoFinishMessage');
         
         // Nombres de meses
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -900,6 +1021,9 @@
             
             // Inicializar UI
             actualizarUI();
+            
+            // Configurar verificación periódica
+            setInterval(verificarFinalizacionAutomatica, 60000); // Verificar cada minuto
         }
         
         // Configurar eventos
@@ -907,13 +1031,22 @@
             document.getElementById('btnCalcular').addEventListener('click', calcularObjetivos);
             document.getElementById('btnRegistrar').addEventListener('click', registrarViaje);
             document.getElementById('btnReiniciar').addEventListener('click', reiniciarDia);
-            btnFinalizarDia.addEventListener('click', finalizarDia);
+            btnFinalizarDia.addEventListener('click', mostrarResumenDia);
             btnAplicarMeta.addEventListener('click', aplicarMetaMensual);
             prevMonthButton.addEventListener('click', () => cambiarMes(-1));
             nextMonthButton.addEventListener('click', () => cambiarMes(1));
             btnReiniciarMes.addEventListener('click', reiniciarMes);
             btnAplicarRedistribucion.addEventListener('click', aplicarRedistribucion);
             btnAplicarRedistribucionExceso.addEventListener('click', aplicarRedistribucionExceso);
+            closeResumenModal.addEventListener('click', () => modalResumenDia.style.display = 'none');
+            btnConfirmarFinalizar.addEventListener('click', finalizarDia);
+            
+            // Cerrar modal al hacer clic fuera
+            window.addEventListener('click', (e) => {
+                if (e.target === modalResumenDia) {
+                    modalResumenDia.style.display = 'none';
+                }
+            });
             
             // Configurar pestañas
             const tabs = document.querySelectorAll('.tab');
@@ -933,15 +1066,129 @@
                     }
                 });
             });
+
+            // Configurar eventos de entrada para calcular automáticamente
+            totalGanarInput.addEventListener('change', calcularObjetivos);
+            horasDisponiblesInput.addEventListener('change', calcularObjetivos);
+            tiempoPromedioViajeInput.addEventListener('change', calcularObjetivos);
         }
         
-        // Actualizar toda la UI
-        function actualizarUI() {
-            generarCalendario();
-            actualizarResumenMensual();
-            calcularObjetivos();
+        // Nueva función: Verificar finalización automática
+        function verificarFinalizacionAutomatica() {
+            const ahora = new Date();
+            const horaActual = ahora.getHours();
+            const minutosActual = ahora.getMinutes();
+            const diaActual = ahora.getDate();
+            const mesActual = ahora.getMonth();
+            const añoActual = ahora.getFullYear();
+            const diaKeyActual = `${diaActual}-${mesActual}-${añoActual}`;
+            
+            // Verificar si es después de las 10 PM (22:00) y hay viajes registrados hoy
+            // y el día actual no ha sido guardado en diasTrabajados
+            if ((horaActual > 22 || (horaActual === 22 && minutosActual >= 0)) && 
+                viajes.length > 0 && 
+                !diasTrabajados[diaKeyActual]) {
+                
+                // Mostrar notificación
+                autoFinishMessage.textContent = "Finalizando día automáticamente...";
+                autoFinishNotification.style.display = 'block';
+                
+                // Esperar 3 segundos para que el usuario vea la notificación
+                setTimeout(() => {
+                    finalizarDiaAutomaticamente();
+                }, 3000);
+            }
+        }
+        
+        // Nueva función: Finalizar día automáticamente
+        function finalizarDiaAutomaticamente() {
+            const hoy = new Date();
+            const dayKey = `${hoy.getDate()}-${hoy.getMonth()}-${hoy.getFullYear()}`;
+            
+            // Aplicar redistribución automática si hay déficit o exceso
+            const diferencia = totalAcumulado - metaDiaria;
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            // Calcular días futuros laborables
+            let diasFuturosLaborables = 0;
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${currentMonth + 1}-${i}`;
+                const isRestDay = diasDescanso.includes(dateStr);
+                
+                if (!isRestDay && i > hoy.getDate() && 
+                    currentMonth === hoy.getMonth() && currentYear === hoy.getFullYear()) {
+                    diasFuturosLaborables++;
+                }
+            }
+            
+            // Aplicar redistribución automática si hay días futuros
+            let mensajeFinalizacion = "Día finalizado automáticamente.";
+            
+            if (diasFuturosLaborables > 0) {
+                if (diferencia < 0 && Math.abs(diferencia) > 0.01) {
+                    // Aplicar redistribución por déficit
+                    const deficit = Math.abs(diferencia);
+                    const nuevaMeta = metaDiaria + (deficit / diasFuturosLaborables);
+                    metaDiaria = nuevaMeta;
+                    totalGanarInput.value = nuevaMeta.toFixed(2);
+                    
+                    // Recalcular objetivos
+                    calcularObjetivos();
+                    
+                    mensajeFinalizacion = `Día finalizado automáticamente. Redistribución aplicada por déficit. Nueva meta diaria: $${nuevaMeta.toFixed(2)}`;
+                } else if (diferencia > 0) {
+                    // Aplicar redistribución por exceso
+                    const exceso = diferencia;
+                    const nuevaMeta = Math.max(metaDiaria * 0.5, metaDiaria - (exceso / diasFuturosLaborables));
+                    metaDiaria = nuevaMeta;
+                    totalGanarInput.value = nuevaMeta.toFixed(2);
+                    
+                    // Recalcular objetivos
+                    calcularObjetivos();
+                    
+                    mensajeFinalizacion = `Día finalizado automáticamente. Redistribución aplicada por exceso. Nueva meta diaria: $${nuevaMeta.toFixed(2)}`;
+                }
+            }
+            
+            // Guardar el total del día en el historial de días trabajados
+            diasTrabajados[dayKey] = (diasTrabajados[dayKey] || 0) + totalAcumulado;
+            
+            // Reiniciar contadores del día
+            viajes = [];
+            totalAcumulado = 0;
+            saldoAcumulado = 0;
+            
+            // Ocultar notificaciones
+            saldoNotification.style.display = 'none';
+            
+            // Actualizar la UI
+            actualizarProgreso();
+            actualizarSugerencia();
+            actualizarListaViajes();
+            actualizarEstadisticas();
+            saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
+            
+            // Actualizar resumen mensual
             actualizarResumenMensualCompleto();
+            
+            // Recalcular redistribución
             calcularRedistribucion();
+            
+            // Regenerar el calendario para actualizar los días marcados
+            generarCalendario();
+            
+            // Guardar valores
+            guardarValores();
+            
+            // Actualizar notificación
+            autoFinishMessage.textContent = mensajeFinalizacion;
+            
+            // Ocultar notificación después de 5 segundos
+            setTimeout(() => {
+                autoFinishNotification.style.display = 'none';
+            }, 5000);
         }
         
         // Función para verificar si un día es pasado
@@ -1067,17 +1314,19 @@
             guardarValores();
         }
         
-        // Calcular redistribución de metas
+        // Función corregida para calcular redistribución
         function calcularRedistribucion() {
             const today = new Date();
             const lastDay = new Date(currentYear, currentMonth + 1, 0);
             const daysInMonth = lastDay.getDate();
             
-            // Si estamos viendo un mes futuro, no calcular redistribución
+            // Reiniciar valores
+            faltanteRedistribuir = 0;
+            excesoRedistribuir = 0;
+            
+            // Solo calcular para el mes actual y si no es un mes futuro
             if (currentYear > today.getFullYear() || 
                 (currentYear === today.getFullYear() && currentMonth > today.getMonth())) {
-                faltanteRedistribuir = 0;
-                excesoRedistribuir = 0;
                 faltanteRedistribuirElement.textContent = '$0.00';
                 excesoRedistribuirElement.textContent = '$0.00';
                 nuevaMetaDiariaElement.textContent = `$${metaDiaria.toFixed(2)}`;
@@ -1085,132 +1334,196 @@
                 return;
             }
             
-            // Calcular días pasados y futuros
-            let diasPasados = 0;
-            let diasFuturos = 0;
+            // Calcular días pasados laborables y días futuros laborables
+            let diasPasadosLaborables = 0;
+            let diasFuturosLaborables = 0;
             let totalFaltante = 0;
             let totalExceso = 0;
             
-            // Solo calcular para el mes actual
-            if (currentYear === today.getFullYear() && currentMonth === today.getMonth()) {
-                for (let i = 1; i <= daysInMonth; i++) {
-                    const dayKey = `${i}-${currentMonth}-${currentYear}`;
-                    const dateStr = `${currentYear}-${currentMonth + 1}-${i}`;
-                    const isRestDay = diasDescanso.includes(dateStr);
-                    
-                    // Si es un día pasado y no es de descanso
-                    if (i <= today.getDate() && !isRestDay) {
-                        diasPasados++;
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayKey = `${i}-${currentMonth}-${currentYear}`;
+                const dateStr = `${currentYear}-${currentMonth + 1}-${i}`;
+                const isRestDay = diasDescanso.includes(dateStr);
+                
+                // Solo considerar días laborables
+                if (!isRestDay) {
+                    // Si es un día pasado
+                    if (i < today.getDate() || 
+                        (currentYear === today.getFullYear() && currentMonth < today.getMonth())) {
+                        diasPasadosLaborables++;
                         
-                        // Si no se registró ganancia para este día, contar como faltante completo
-                        if (!diasTrabajados[dayKey]) {
+                        // Verificar si el día fue trabajado
+                        if (diasTrabajados[dayKey]) {
+                            const gananciaDia = diasTrabajados[dayKey];
+                            if (gananciaDia < metaDiaria) {
+                                totalFaltante += (metaDiaria - gananciaDia);
+                            } else if (gananciaDia > metaDiaria) {
+                                totalExceso += (gananciaDia - metaDiaria);
+                            }
+                        } else {
+                            // Día pasado que no fue trabajado = faltante completo
                             totalFaltante += metaDiaria;
-                        } else if (diasTrabajados[dayKey] < metaDiaria) {
-                            totalFaltante += (metaDiaria - diasTrabajados[dayKey]);
-                        } else if (diasTrabajados[dayKey] > metaDiaria) {
-                            totalExceso += (diasTrabajados[dayKey] - metaDiaria);
                         }
-                    } 
-                    // Si es un día futuro y no es de descanso
-                    else if (i > today.getDate() && !isRestDay) {
-                        diasFuturos++;
+                    }
+                    // Si es un día futuro (incluyendo hoy si aún no termina)
+                    else if (i >= today.getDate() && 
+                            (currentYear === today.getFullYear() && currentMonth === today.getMonth())) {
+                        diasFuturosLaborables++;
                     }
                 }
+            }
+            
+            // Calcular nueva meta diaria si hay días futuros
+            if (diasFuturosLaborables > 0) {
+                // Redistribución por déficit
+                faltanteRedistribuir = totalFaltante;
+                const nuevaMetaDeficit = metaDiaria + (totalFaltante / diasFuturosLaborables);
                 
-                // Calcular nueva meta diaria si hay días futuros
-                if (diasFuturos > 0) {
-                    // Redistribución por déficit
-                    faltanteRedistribuir = totalFaltante;
-                    const nuevaMetaDeficit = metaDiaria + (totalFaltante / diasFuturos);
-                    
-                    faltanteRedistribuirElement.textContent = `$${totalFaltante.toFixed(2)}`;
-                    nuevaMetaDiariaElement.textContent = `$${nuevaMetaDeficit.toFixed(2)}`;
-                    
-                    // Redistribución por exceso
-                    excesoRedistribuir = totalExceso;
-                    const nuevaMetaExceso = Math.max(0, metaDiaria - (totalExceso / diasFuturos));
-                    
-                    excesoRedistribuirElement.textContent = `$${totalExceso.toFixed(2)}`;
-                    nuevaMetaDiariaExcesoElement.textContent = `$${nuevaMetaExceso.toFixed(2)}`;
-                } else {
-                    faltanteRedistribuir = 0;
-                    excesoRedistribuir = 0;
-                    faltanteRedistribuirElement.textContent = '$0.00';
-                    excesoRedistribuirElement.textContent = '$0.00';
-                    nuevaMetaDiariaElement.textContent = `$${metaDiaria.toFixed(2)}`;
-                    nuevaMetaDiariaExcesoElement.textContent = `$${metaDiaria.toFixed(2)}`;
-                }
+                faltanteRedistribuirElement.textContent = `$${totalFaltante.toFixed(2)}`;
+                nuevaMetaDiariaElement.textContent = `$${nuevaMetaDeficit.toFixed(2)}`;
+                
+                // Redistribución por exceso
+                excesoRedistribuir = totalExceso;
+                const nuevaMetaExceso = Math.max(metaDiaria * 0.5, metaDiaria - (totalExceso / diasFuturosLaborables));
+                
+                excesoRedistribuirElement.textContent = `$${totalExceso.toFixed(2)}`;
+                nuevaMetaDiariaExcesoElement.textContent = `$${nuevaMetaExceso.toFixed(2)}`;
+            } else {
+                faltanteRedistribuirElement.textContent = '$0.00';
+                excesoRedistribuirElement.textContent = '$0.00';
+                nuevaMetaDiariaElement.textContent = `$${metaDiaria.toFixed(2)}`;
+                nuevaMetaDiariaExcesoElement.textContent = `$${metaDiaria.toFixed(2)}`;
             }
         }
         
-        // Aplicar redistribución por déficit
+        // Función corregida para aplicar redistribución por déficit
         function aplicarRedistribucion() {
+            const today = new Date();
             const lastDay = new Date(currentYear, currentMonth + 1, 0);
             const daysInMonth = lastDay.getDate();
             
             // Calcular días futuros laborables
-            let diasFuturos = 0;
-            const today = new Date();
+            let diasFuturosLaborables = 0;
             
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateStr = `${currentYear}-${currentMonth + 1}-${i}`;
                 const isRestDay = diasDescanso.includes(dateStr);
                 
-                if (!isRestDay && i > today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
-                    diasFuturos++;
+                if (!isRestDay && i >= today.getDate() && 
+                    currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
+                    diasFuturosLaborables++;
                 }
             }
             
-            if (diasFuturos > 0) {
-                metaDiaria = metaDiaria + (faltanteRedistribuir / diasFuturos);
-                totalGanarInput.value = metaDiaria.toFixed(2);
+            if (diasFuturosLaborables > 0 && faltanteRedistribuir > 0) {
+                const nuevaMeta = metaDiaria + (faltanteRedistribuir / diasFuturosLaborables);
+                metaDiaria = nuevaMeta;
+                totalGanarInput.value = nuevaMeta.toFixed(2);
                 
                 // Recalcular objetivos
                 calcularObjetivos();
                 
-                alert(`Redistribución aplicada. Nueva meta diaria: $${metaDiaria.toFixed(2)}`);
+                // Resetear el déficit después de aplicar
+                faltanteRedistribuir = 0;
+                faltanteRedistribuirElement.textContent = '$0.00';
+                nuevaMetaDiariaElement.textContent = `$${nuevaMeta.toFixed(2)}`;
+                
+                // Mostrar confirmación
+                mostrarNotificacion(`Redistribución aplicada. Nueva meta diaria: $${nuevaMeta.toFixed(2)}`, 'success');
                 
                 // Guardar valores
                 guardarValores();
                 
                 // Recalcular redistribución
                 calcularRedistribucion();
+            } else {
+                mostrarNotificacion('No hay días futuros para redistribuir o no hay déficit', 'warning');
             }
         }
         
-        // Aplicar redistribución por exceso
+        // Función corregida para aplicar redistribución por exceso
         function aplicarRedistribucionExceso() {
+            const today = new Date();
             const lastDay = new Date(currentYear, currentMonth + 1, 0);
             const daysInMonth = lastDay.getDate();
             
             // Calcular días futuros laborables
-            let diasFuturos = 0;
-            const today = new Date();
+            let diasFuturosLaborables = 0;
             
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateStr = `${currentYear}-${currentMonth + 1}-${i}`;
                 const isRestDay = diasDescanso.includes(dateStr);
                 
-                if (!isRestDay && i > today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
-                    diasFuturos++;
+                if (!isRestDay && i >= today.getDate() && 
+                    currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
+                    diasFuturosLaborables++;
                 }
             }
             
-            if (diasFuturos > 0) {
-                metaDiaria = Math.max(0, metaDiaria - (excesoRedistribuir / diasFuturos));
-                totalGanarInput.value = metaDiaria.toFixed(2);
+            if (diasFuturosLaborables > 0 && excesoRedistribuir > 0) {
+                const nuevaMeta = Math.max(metaDiaria * 0.5, metaDiaria - (excesoRedistribuir / diasFuturosLaborables));
+                metaDiaria = nuevaMeta;
+                totalGanarInput.value = nuevaMeta.toFixed(2);
                 
                 // Recalcular objetivos
                 calcularObjetivos();
                 
-                alert(`Redistribución por exceso aplicada. Nueva meta diaria: $${metaDiaria.toFixed(2)}`);
+                // Resetear el exceso después de aplicar
+                excesoRedistribuir = 0;
+                excesoRedistribuirElement.textContent = '$0.00';
+                nuevaMetaDiariaExcesoElement.textContent = `$${nuevaMeta.toFixed(2)}`;
+                
+                // Mostrar confirmación
+                mostrarNotificacion(`Redistribución por exceso aplicada. Nueva meta diaria: $${nuevaMeta.toFixed(2)}`, 'success');
                 
                 // Guardar valores
                 guardarValores();
                 
                 // Recalcular redistribución
                 calcularRedistribucion();
+            } else {
+                mostrarNotificacion('No hay días futuros para redistribuir o no hay exceso', 'warning');
             }
+        }
+        
+        // Función auxiliar para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            // Crear elemento de notificación si no existe
+            let notificacion = document.getElementById('notificacionGlobal');
+            if (!notificacion) {
+                notificacion = document.createElement('div');
+                notificacion.id = 'notificacionGlobal';
+                notificacion.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: bold;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    max-width: 300px;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(notificacion);
+            }
+            
+            // Configurar colores según el tipo
+            const colores = {
+                success: '#10b981',
+                warning: '#f59e0b',
+                error: '#ef4444'
+            };
+            
+            notificacion.style.backgroundColor = colores[tipo] || colores.success;
+            notificacion.textContent = mensaje;
+            notificacion.style.display = 'block';
+            
+            // Ocultar después de 4 segundos
+            setTimeout(() => {
+                notificacion.style.display = 'none';
+            }, 4000);
         }
         
         // Actualizar resumen mensual
@@ -1410,7 +1723,7 @@
             // Si el monto está por debajo del mínimo sugerido, agregar al saldo Y al total acumulado
             if (monto < minSugerido) {
                 saldoAcumulado += monto;
-                totalAcumulado += monto;  // <-- Esta línea fue agregada
+                totalAcumulado += monto;
                 saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
                 
                 // Mostrar notificación de saldo generado
@@ -1486,7 +1799,7 @@
             actualizarListaViajes();
             actualizarEstadisticas();
             
-            // Verificar y aplicar saldo automáticamente si es suficiente
+            // Verificar y usar saldo automáticamente si es suficiente
             verificarYUsarSaldoAutomaticamente();
             
             // Limpiar el campo
@@ -1510,15 +1823,12 @@
                 // Registrar un viaje con saldo (pero NO sumar al totalAcumulado)
                 const ahora = new Date();
                 viajes.push({
-                    monto: 0,  // <-- Cambiado a 0 para que no afecte el total
+                    monto: 0,
                     hora: ahora.toLocaleTimeString(),
                     timestamp: ahora.getTime(),
                     multiplicador: 1,
                     tipo: 'saldo'
                 });
-                
-                // NO sumar al totalAcumulado porque ya fue contabilizado
-                // cuando se generó el saldo
                 
                 // Mostrar notificación
                 saldoMessage.textContent = `¡Viaje generado automáticamente con saldo! Saldo restante: $${saldoAcumulado.toFixed(2)}`;
@@ -1543,42 +1853,248 @@
             calcularRedistribucion();
         }
         
+        // Mostrar resumen del día antes de finalizar
+        function mostrarResumenDia() {
+            // Calcular estadísticas del día
+            const viajesRealizados = viajes.reduce((total, viaje) => total + (viaje.multiplicador || 0), 0);
+            const totalGanado = totalAcumulado;
+            const metaAlcanzada = totalGanado >= metaDiaria * 0.95;
+            const diferencia = totalGanado - metaDiaria;
+            
+            // Generar contenido del resumen
+            let contenidoHTML = `
+                <div class="resumen-destacado">
+                    <div class="resumen-item">
+                        <span class="resumen-label">Meta del día:</span>
+                        <span class="resumen-value">$${metaDiaria.toFixed(2)}</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span class="resumen-label">Total ganado:</span>
+                        <span class="resumen-value">$${totalGanado.toFixed(2)}</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span class="resumen-label">Estado:</span>
+                        <span class="resumen-value" style="color: ${metaAlcanzada ? 'var(--success)' : 'var(--danger)'}">
+                            ${metaAlcanzada ? 'Meta Alcanzada ✓' : 'Meta No Alcanzada ✗'}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="resumen-item">
+                    <span class="resumen-label">Diferencia:</span>
+                    <span class="resumen-value" style="color: ${diferencia >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                        $${diferencia.toFixed(2)}
+                    </span>
+                </div>
+                
+                <div class="resumen-item">
+                    <span class="resumen-label">Viajes realizados:</span>
+                    <span class="resumen-value">${viajesRealizados}</span>
+                </div>
+                
+                <div class="resumen-item">
+                    <span class="resumen-label">Saldo acumulado:</span>
+                    <span class="resumen-value">$${saldoAcumulado.toFixed(2)}</span>
+                </div>
+            `;
+            
+            // Verificar si hay déficit o exceso para aplicar automáticamente
+            const hoy = new Date();
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            // Calcular días futuros laborables
+            let diasFuturosLaborables = 0;
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${currentMonth + 1}-${i}`;
+                const isRestDay = diasDescanso.includes(dateStr);
+                
+                if (!isRestDay && i > hoy.getDate() && 
+                    currentMonth === hoy.getMonth() && currentYear === hoy.getFullYear()) {
+                    diasFuturosLaborables++;
+                }
+            }
+            
+            // Mostrar información sobre redistribución automática
+            if (diasFuturosLaborables > 0) {
+                if (diferencia < 0 && Math.abs(diferencia) > 0.01) {
+                    const deficit = Math.abs(diferencia);
+                    const nuevaMeta = metaDiaria + (deficit / diasFuturosLaborables);
+                    
+                    contenidoHTML += `
+                        <div class="resumen-destacado" style="background-color: #fffbeb; border-left-color: var(--warning);">
+                            <div class="resumen-item">
+                                <span class="resumen-label">Déficit detectado:</span>
+                                <span class="resumen-value" style="color: var(--warning)">$${deficit.toFixed(2)}</span>
+                            </div>
+                            <div class="resumen-item">
+                                <span class="resumen-label">Nueva meta diaria sugerida:</span>
+                                <span class="resumen-value" style="color: var(--warning)">$${nuevaMeta.toFixed(2)}</span>
+                            </div>
+                            <div class="resumen-item">
+                                <span class="resumen-label">Acción automática:</span>
+                                <span class="resumen-value" style="color: var(--warning)">Se aplicará redistribución</span>
+                            </div>
+                        </div>
+                    `;
+                } else if (diferencia > 0) {
+                    const exceso = diferencia;
+                    const nuevaMeta = Math.max(metaDiaria * 0.5, metaDiaria - (exceso / diasFuturosLaborables));
+                    
+                    contenidoHTML += `
+                        <div class="resumen-destacado" style="background-color: #f0f9ff; border-left-color: var(--success);">
+                            <div class="resumen-item">
+                                <span class="resumen-label">Exceso detectado:</span>
+                                <span class="resumen-value" style="color: var(--success)">$${exceso.toFixed(2)}</span>
+                            </div>
+                            <div class="resumen-item">
+                                <span class="resumen-label">Nueva meta diaria sugerida:</span>
+                                <span class="resumen-value" style="color: var(--success)">$${nuevaMeta.toFixed(2)}</span>
+                            </div>
+                            <div class="resumen-item">
+                                <span class="resumen-label">Acción automática:</span>
+                                <span class="resumen-value" style="color: var(--success)">Se aplicará redistribución</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Mostrar historial de viajes
+            contenidoHTML += `
+                <h3 style="margin-top: 20px; color: var(--primary);">Historial de Viajes</h3>
+                <div style="max-height: 200px; overflow-y: auto;">
+            `;
+            
+            if (viajes.length === 0) {
+                contenidoHTML += `
+                    <div style="text-align: center; color: var(--gray); padding: 10px;">
+                        <p>No hay viajes registrados hoy</p>
+                    </div>
+                `;
+            } else {
+                // Ordenar viajes por timestamp (más recientes primero)
+                viajes.sort((a, b) => b.timestamp - a.timestamp);
+                
+                viajes.forEach((viaje, index) => {
+                    const multiplicadorBadge = viaje.multiplicador > 1 ? 
+                        `<span style="font-size: 10px; background: var(--warning); color: white; padding: 2px 5px; border-radius: 10px; margin-left: 5px;">x${viaje.multiplicador}</span>` : '';
+                    
+                    if (viaje.tipo === 'saldo') {
+                        contenidoHTML += `
+                            <div class="resumen-item">
+                                <span class="resumen-label">Viaje #${viajes.length - index} ${multiplicadorBadge}</span>
+                                <span class="resumen-value" style="color: var(--warning)">Viaje con saldo</span>
+                            </div>
+                        `;
+                    } else {
+                        contenidoHTML += `
+                            <div class="resumen-item">
+                                <span class="resumen-label">Viaje #${viajes.length - index} ${multiplicadorBadge}</span>
+                                <span class="resumen-value">$${viaje.monto.toFixed(2)}</span>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            contenidoHTML += `</div>`;
+            
+            // Actualizar contenido del modal
+            resumenDiaContent.innerHTML = contenidoHTML;
+            
+            // Mostrar modal
+            modalResumenDia.style.display = 'flex';
+        }
+        
         // Finalizar el día (guardar progreso pero mantener datos)
         function finalizarDia() {
-            if (confirm('¿Estás seguro de que quieres finalizar el día? Se guardará el progreso actual pero podrás seguir registrando viajes.')) {
-                // Guardar el total del día en el historial de días trabajados
-                const today = new Date();
-                const dayKey = `${today.getDate()}-${today.getMonth()}-${today.getFullYear()}`;
+            // Ocultar modal
+            modalResumenDia.style.display = 'none';
+            
+            // Aplicar redistribución automática si hay déficit o exceso
+            const diferencia = totalAcumulado - metaDiaria;
+            const hoy = new Date();
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            // Calcular días futuros laborables
+            let diasFuturosLaborables = 0;
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${currentMonth + 1}-${i}`;
+                const isRestDay = diasDescanso.includes(dateStr);
                 
-                // Sumar el acumulado actual al día (por si ya existía)
-                diasTrabajados[dayKey] = (diasTrabajados[dayKey] || 0) + totalAcumulado;
-                
-                // Reiniciar contadores del día
-                viajes = [];
-                totalAcumulado = 0;
-                saldoAcumulado = 0;
-                
-                // Ocultar notificaciones
-                saldoNotification.style.display = 'none';
-                
-                // Actualizar la UI
-                actualizarProgreso();
-                actualizarSugerencia();
-                actualizarListaViajes();
-                actualizarEstadisticas();
-                saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
-                
-                // Actualizar resumen mensual
-                actualizarResumenMensualCompleto();
-                
-                // Regenerar el calendario para actualizar los días marcados
-                generarCalendario();
-                
-                // Guardar valores
-                guardarValores();
-                
-                alert('Día finalizado correctamente. Los datos se han guardado en el historial mensual.');
+                if (!isRestDay && i > hoy.getDate() && 
+                    currentMonth === hoy.getMonth() && currentYear === hoy.getFullYear()) {
+                    diasFuturosLaborables++;
+                }
             }
+            
+            // Aplicar redistribución automática si hay días futuros
+            if (diasFuturosLaborables > 0) {
+                if (diferencia < 0 && Math.abs(diferencia) > 0.01) {
+                    // Aplicar redistribución por déficit
+                    const deficit = Math.abs(diferencia);
+                    const nuevaMeta = metaDiaria + (deficit / diasFuturosLaborables);
+                    metaDiaria = nuevaMeta;
+                    totalGanarInput.value = nuevaMeta.toFixed(2);
+                    
+                    // Recalcular objetivos
+                    calcularObjetivos();
+                    
+                    // Mostrar notificación
+                    mostrarNotificacion(`Redistribución automática aplicada por déficit. Nueva meta diaria: $${nuevaMeta.toFixed(2)}`, 'warning');
+                } else if (diferencia > 0) {
+                    // Aplicar redistribución por exceso
+                    const exceso = diferencia;
+                    const nuevaMeta = Math.max(metaDiaria * 0.5, metaDiaria - (exceso / diasFuturosLaborables));
+                    metaDiaria = nuevaMeta;
+                    totalGanarInput.value = nuevaMeta.toFixed(2);
+                    
+                    // Recalcular objetivos
+                    calcularObjetivos();
+                    
+                    // Mostrar notificación
+                    mostrarNotificacion(`Redistribución automática aplicada por exceso. Nueva meta diaria: $${nuevaMeta.toFixed(2)}`, 'success');
+                }
+            }
+            
+            // Guardar el total del día en el historial de días trabajados
+            const dayKey = `${hoy.getDate()}-${hoy.getMonth()}-${hoy.getFullYear()}`;
+            
+            // Sumar el acumulado actual al día (por si ya existía)
+            diasTrabajados[dayKey] = (diasTrabajados[dayKey] || 0) + totalAcumulado;
+            
+            // Reiniciar contadores del día
+            viajes = [];
+            totalAcumulado = 0;
+            saldoAcumulado = 0;
+            
+            // Ocultar notificaciones
+            saldoNotification.style.display = 'none';
+            
+            // Actualizar la UI
+            actualizarProgreso();
+            actualizarSugerencia();
+            actualizarListaViajes();
+            actualizarEstadisticas();
+            saldoAcumuladoElement.textContent = `$${saldoAcumulado.toFixed(2)}`;
+            
+            // Actualizar resumen mensual
+            actualizarResumenMensualCompleto();
+            
+            // Recalcular redistribución
+            calcularRedistribucion();
+            
+            // Regenerar el calendario para actualizar los días marcados
+            generarCalendario();
+            
+            // Guardar valores
+            guardarValores();
+            
+            mostrarNotificacion('Día finalizado correctamente. Los datos se han guardado en el historial mensual.', 'success');
         }
         
         // Reiniciar el día
@@ -1829,6 +2345,9 @@
                 // Aplicar la meta mensual para calcular días laborables y meta diaria sugerida
                 aplicarMetaMensual();
             }
+            
+            // Actualizar redistribución después de cargar los valores
+            calcularRedistribucion();
         }
         
         // Inicializar la aplicación cuando se cargue la página
